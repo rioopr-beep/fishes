@@ -98,11 +98,21 @@ function Lionfish({ targetRef, isMobile, fresnelEnabled, fishWorldPos }) {
   useEffect(() => {
     scene.traverse((child) => {
       if (child.isMesh) {
-        child.material = shaderMat;
+        // Dimatikan sementara untuk pengujian
+        // child.material = shaderMat; 
+        
+        // Material diagnostik warna merah menyala
+        child.material = new THREE.MeshStandardMaterial({
+          color: '#ff0044',
+          emissive: '#ff0044', 
+          emissiveIntensity: 0.8,
+          wireframe: true 
+        });
+
         child.castShadow = true;
       }
     });
-  }, [scene, shaderMat]);
+  }, [scene]); // shaderMat dihapus sementara dari dependensi
 
   useEffect(() => {
     shaderMat.uniforms.uFresnelEnabled.value = fresnelEnabled ? 1.0 : 0.0;
