@@ -2,19 +2,32 @@
 
 import { useRef, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import HeroSection from '@/components/HeroSection';
-import ProjectsSection from '@/components/ProjectsSection';
-import ContactSection from '@/components/ContactSection';
-import PageTransition from '@/components/PageTransition';
-import BackgroundInterpolator from '@/components/BackgroundInterpolator';
 
-// Dynamic import: WebGL can't SSR
 const AbyssalScene = dynamic(
   () => import('@/components/AbyssalScene'),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => (
+      <div style={{
+        position: 'fixed', inset: 0, 
+        background: '#0a0a0a',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <p style={{ color: 'rgba(60,130,255,0.5)', fontFamily: 'monospace', fontSize: 12, letterSpacing: '0.3em' }}>
+          INITIALIZING...
+        </p>
+      </div>
+    )
+  }
 );
 
-// SSR-safe mobile detection
+// Lazy load semua komponen UI
+const HeroSection = dynamic(() => import('@/components/HeroSection'), { ssr: false });
+const ProjectsSection = dynamic(() => import('@/components/ProjectsSection'), { ssr: false });
+const ContactSection = dynamic(() => import('@/components/ContactSection'), { ssr: false });
+const PageTransition = dynamic(() => import('@/components/PageTransition'), { ssr: false });
+const BackgroundInterpolator = dynamic(() => import('@/components/BackgroundInterpolator'), { ssr: false });
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -29,34 +42,52 @@ function useIsMobile() {
 
 export default function AbyssalDescentPage() {
   const isMobile = useIsMobile();
-  // Shared ref: fish world position → drives contact reveal
   const fishWorldPos = useRef({ x: 0, y: 0, z: 0 });
+  const [error, setError] = useState(null);
+
+  if (error) {
+    return (
+      <div style={{ 
+        position: 'fixed', inset: 0, background: '#0a0a0a',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 16
+      }}>
+        <p style={{ color: '#ff4444', fontFamily: 'monospace', fontSize: 12 }}>
+          ERROR: {error}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <PageTransition>
+    <ErrorBoundary onError={setError}>
       <BackgroundInterpolator />
-
-      {/*
-        AbyssalScene owns the Canvas (position: fixed, z-index: 0).
-        Its children prop is rendered inside <Scroll html> — DOM nodes
-        that scroll in sync with the R3F ScrollControls viewport.
-      */}
-      <AbyssalScene isMobile={isMobile} fishWorldPos={fishWorldPos}>
-        {/*
-          These components render as normal DOM inside drei's <Scroll html>.
-          Total height = 4 × 100vh (matching ScrollControls pages={4}).
-        */}
-        <div style={{ width: '100%' }}>
-          {/* Page 0: Hero */}
-          <HeroSection />
-
-          {/* Pages 1–2: Projects (2 × ~100vh) */}
-          <ProjectsSection />
-
-          {/* Page 3: Contact + Footer */}
-          <ContactSection fishWorldPos={fishWorldPos} />
-        </div>
-      </AbyssalScene>
-    </PageTransition>
+      <PageTransition>
+        <AbyssalScene isMobile={isMobile} fishWorldPos={fishWorldPos}>
+          <div style={{ width: '100%' }}>
+            <HeroSection />
+            <ProjectsSection />
+            <ContactSection fishWorldPos={fishWorldPos} />
+          </div>
+        </AbyssalScene>
+      </PageTransition>
+    </ErrorBoundary>
   );
+}
+
+class ErrorBoundary extends Error {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error: error.message };
+  }
+  componentDidCatch(error) {
+    this.props.onError?.(error.message);
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
 }
