@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, Component } from 'react';
 import dynamic from 'next/dynamic';
 
 const AbyssalScene = dynamic(
@@ -75,7 +75,7 @@ export default function AbyssalDescentPage() {
   );
 }
 
-class ErrorBoundary extends Error {
+class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
