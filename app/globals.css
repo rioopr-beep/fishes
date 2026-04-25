@@ -1,0 +1,5 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #0a0a0a; color: #e8e8e8; overflow: hidden; -webkit-font-smoothing: antialiased; }
+canvas { display: block; touch-action: none; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(60,100,200,0.3); }
