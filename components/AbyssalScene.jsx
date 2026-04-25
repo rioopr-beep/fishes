@@ -96,11 +96,10 @@ function Lionfish({ targetRef, isMobile, fresnelEnabled, fishWorldPos }) {
   );
 
   useEffect(() => {
+    let meshCount = 0;
     scene.traverse((child) => {
       if (child.isMesh) {
-        // Dimatikan sementara untuk pengujian
-        // child.material = shaderMat; 
-        
+        meshCount++;
         // Material diagnostik warna merah menyala
         child.material = new THREE.MeshStandardMaterial({
           color: '#ff0044',
@@ -108,26 +107,28 @@ function Lionfish({ targetRef, isMobile, fresnelEnabled, fishWorldPos }) {
           emissiveIntensity: 0.8,
           wireframe: true 
         });
-
         child.castShadow = true;
       }
     });
-  }, [scene]); // shaderMat dihapus sementara dari dependensi
+    // Menampilkan log ke konsol peramban untuk memastikan model ada isinya
+    console.log("DIAGNOSTIK: Jumlah Mesh ditemukan dalam GLB = ", meshCount);
+  }, [scene]);
 
   useEffect(() => {
     shaderMat.uniforms.uFresnelEnabled.value = fresnelEnabled ? 1.0 : 0.0;
   }, [fresnelEnabled, shaderMat]);
 
   useFrame((state, delta) => {
-    if (!groupRef.current || !targetRef.current) return;
+    if (!groupRef.current) return;
 
     const time = state.clock.elapsedTime;
     const scrollOffset = scroll.offset;
     const lerpSpeed = isMobile ? 0.09 : 0.06;
 
-    // XY: follow mouse / touch
-    const tx = targetRef.current.x;
-    const ty = targetRef.current.y + scrollOffset * -6;
+    // XY: follow mouse / touch (DITAMBAHKAN FALLBACK 0 UNTUK MENCEGAH NaN)
+    const tx = targetRef?.current?.x || 0; 
+    const ty = (targetRef?.current?.y || 0) + scrollOffset * -6;
+    
     const tVec = new THREE.Vector3(tx, ty, 0);
     currentPos.current.lerp(tVec, lerpSpeed);
     groupRef.current.position.copy(currentPos.current);
@@ -166,8 +167,8 @@ function Lionfish({ targetRef, isMobile, fresnelEnabled, fishWorldPos }) {
       0.08
     );
 
-    // Scale by device
-    const targetScale = isMobile ? 0.55 : 0.8;
+    // Scale by device (DIPERBESAR SECARA EKSTREM UNTUK DIAGNOSTIK)
+    const targetScale = 30.0; // Sebelumnya 0.55 / 0.8
     groupRef.current.scale.setScalar(
       THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.05)
     );
